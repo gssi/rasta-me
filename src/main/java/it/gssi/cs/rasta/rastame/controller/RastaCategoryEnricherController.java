@@ -25,7 +25,7 @@ public class RastaCategoryEnricherController {
 
          */
         Set<Integer> result = new HashSet<>();
-        result.add(1);
+        result.add(4);
         result.add(5);
         return result;
     }
