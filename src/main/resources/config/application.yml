@@ -1,0 +1,13 @@
+server:
+  servlet:
+     context-path: /rastame
+  port: 9090
+spring:
+  application:
+    name: RastaME
+  ai:
+    openai:
+      api-key: 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
+  profiles:
+    active: dev
+
