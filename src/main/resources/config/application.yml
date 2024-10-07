@@ -7,7 +7,7 @@ spring:
     name: RastaME
   ai:
     openai:
-      api-key: 
+      api-key: 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
   profiles:
     active: dev
 

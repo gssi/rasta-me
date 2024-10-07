@@ -13,6 +13,7 @@ public class RastaCategoryEnricherController {
     @GetMapping("")
 
     public @ResponseBody Set<Integer> categoriesenricher() {
+
         /*
         ChatResponse response = chatClient.call(
                 new Prompt(
