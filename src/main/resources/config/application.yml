@@ -5,9 +5,6 @@ server:
 spring:
   application:
     name: RastaME
-  ai:
-    openai:
-      api-key: 
   profiles:
     active: dev
 
