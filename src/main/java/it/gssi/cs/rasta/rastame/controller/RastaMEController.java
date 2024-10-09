@@ -1,13 +1,12 @@
 package it.gssi.cs.rasta.rastame.controller;
 
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("api/metadataenricher")
@@ -19,62 +18,30 @@ public class RastaMEController {
     private ChatClient chatClient;
 
     public RastaMEController(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+        //this.chatClient = chatClientBuilder.build();
+        this.chatClient = chatClientBuilder.defaultSystem("Act as a content metadata enricher for a point of interest management system. Analyze the following content and extract relevant metadata such as keywords, entities (places, people, monuments, organizations), topics, categories, and any other pertinent information. Ensure that the metadata is provided in the same language as the content. If the content is in English, return the metadata in English; if the content is in another language, return the metadata in that language.").build();
     }
 
-    @GetMapping("/{poiDescription}")
-    public @ResponseBody List<Entity> metadataEnricher(@PathVariable("poiDescription") String poiDescription) {
-        
-        // Use the POI description to generate a prompt for extracting entities
-        String promptText = "Extract named entities and provide their corresponding URLs from the following description: " 
-            + poiDescription + 
-            ". The response should include the name of the entity followed by a hyphen and then the URL, each entity on a new line. " +
-            "If a specific URL is not available, provide a relevant Wikipedia or general informative link.";
+    @PostMapping("/description")
+    public List<Entity> enrichPOIDescription(@RequestBody String description) {
+      String prompt = "Analyze the following description of a point of interest: '{description}'. Extract all relevant entities (such as places, people, monuments, or organizations) and, if available, their associated URLs. If you cannot find an appropriate URL, provide a link to the Wikipedia page or another informative link related to the entity. Return a list with each entity and its corresponding URL.";
 
-        /*
-        ChatResponse response = chatClient.call(
-                new Prompt(
-                        promptText,
-                        OpenAiChatOptions.builder()
-                                .withModel("gpt-3.5-turbo")
-                                .withTemperature(0.4F)
-                                .build()
-                ));
-        */
-        ChatResponse chatResponse = chatClient.prompt()
-                .user(promptText)
-                .call()
-                .chatResponse();
-        List<Entity> result = new ArrayList<>();
-        if (chatResponse.getResults() != null && !chatResponse.getResults().isEmpty()) {
-            // Log the raw response content
-            String content = chatResponse.getResults().get(0).getOutput().getContent();
-            logger.info("Raw AI Response: {}", content);
-
-            if (content != null && !content.isEmpty()) {
-                // Parsing the response content assuming it comes in a structured format
-                String[] lines = content.trim().split("\n");
-                for (String line : lines) {
-                    String[] parts = line.split(" - ");  // Assuming format is "EntityName - EntityURL"
-                    if (parts.length >= 2) {
-                        Entity entity = new Entity();
-                        entity.setName(parts[0].trim());
-                        String url = parts[1].trim();
-                        if (url.equalsIgnoreCase("No URL provided")) {
-                            entity.setLink(null);
-                        } else {
-                            entity.setLink(url);
-                        }
-                        result.add(entity);
-                    }
-                }
-            }
-        } else {
-            logger.warn("Empty response or no results from the AI model.");
-        }
-
-        return result;
+      return this.chatClient.prompt()
+              .user(u -> u.text(prompt).param("description",description))
+              .call()
+              .entity(new ParameterizedTypeReference<List<Entity>>() {});
     }
+
+    @PostMapping("/categories")
+    public List<String> categorizePOI(@RequestBody PointOfInterestData pointOfInterestData) {
+      String prompt = "Analyze the name and description of the following point of interest and return a list of categories that can be associated with it. The available categories are: {categories}. Only return categories that exactly match the ones provided in the list. Do not modify, combine, or create new categories under any circumstances. If no exact matches are found in the input list, return an empty list. Ensure that the output is a comma-separated list containing only the categories from the provided list. Under no conditions should new categories, modified categories, or combinations of categories be generated. Point of interest: '{poiName}'. Description: '{poiDescription}'.";
+
+      return this.chatClient.prompt()
+              .user(u -> u.text(prompt).params(Map.of("categories",pointOfInterestData.categories(),"poiName",pointOfInterestData.name(),"poiDescription",pointOfInterestData.description())))
+              .call()
+              .entity(new ParameterizedTypeReference<List<String>>() {});
+    }
+    
 }
 
 
