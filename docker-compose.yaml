@@ -7,6 +7,4 @@ services:
     ports:
       - 9090:9090
     environment:
-      - spring.ai.openai.api-key=
-    volumes:
-      - .m2:/root/.m2     
+      - spring.ai.openai.api-key= 
